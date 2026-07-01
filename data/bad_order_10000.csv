@@ -1,4 +1,4 @@
-"order_id","person_id","order_date","status","total_amount","currency","payment_method","shipping_method","notes"
+"order_id","person_id","order_date","status",,"currency","payment_method","shipping_method","notes"
 1,2477,"2022-12-31","Delivered",521.95,"GBP","klarna","fedex",""
 2,62,"2024-10-02","Shipped",786.99,"USD","google_pay","pickup_point",""
 3,1478,"2024-04-03","Returned",844.95,"GBP","debit_card","economy",""

@@ -14,7 +14,9 @@ class OrderAnalyzer:
 
         self.status_column = config.STATUS_COLUMN
         self.target_status = config.TARGET_STATUS
+        self.amount_column = config.AMOUNT_COLUMN
         self.output_file_name = config.OUTPUT_FILE_NAME
+        self.required_columns = config.REQUIRED_COLUMNS
 
         log_file_path = os.path.join(self.logs_dir, "errors.log")
         logging.basicConfig(
@@ -40,10 +42,6 @@ class OrderAnalyzer:
 
     def filter_orders(self, df):
         # Фильтрация данных
-        if self.status_column not in df.columns:
-            logging.error(f"Колонка {self.status_column} не найдена в файле.")
-            return pd.DataFrame()
-
         filtered_df = df[df[self.status_column] == self.target_status]
         return filtered_df
 
@@ -53,16 +51,16 @@ class OrderAnalyzer:
         df_clean = df.copy()
 
         # проверка, есть ли пустые значения в колонке total_amount
-        was_nan_initially = df_clean['total_amount'].isna().any()
-        df_clean['total_amount'] = pd.to_numeric(df_clean['total_amount'], errors='coerce')
+        was_nan_initially = df_clean[self.amount_column].isna().any()
+        df_clean[self.amount_column] = pd.to_numeric(df_clean[self.amount_column], errors='coerce')
 
         # если появились значения NaN - значит, в колонке были текстовые значения
-        if not was_nan_initially and df_clean['total_amount'].isna().any():
-            logging.error(f"Файл {file_name} пропущен, так как обнаружены нечисловые значения в total_amount.")
+        if not was_nan_initially and df_clean[self.amount_column].isna().any():
+            logging.error(f"Файл {file_name} пропущен, так как обнаружены нечисловые значения в {self.amount_column}.")
             return None
 
-        total_revenue = round(df_clean['total_amount'].sum(), 2)
-        avg_check = round(df_clean['total_amount'].mean(), 2)
+        total_revenue = round(df_clean[self.amount_column].sum(), 2)
+        avg_check = round(df_clean[self.amount_column].mean(), 2)
         order_count = len(df_clean)
 
         metrics['file_name'] = file_name
@@ -78,6 +76,15 @@ class OrderAnalyzer:
         file_name = path.name
         df = self.load_file(path)
         if df is None:
+            return None
+
+        # проверка наличия обязательных полей
+        missing_columns = []
+        for col in self.required_columns:
+            if col not in df.columns:
+                missing_columns.append(col)
+        if missing_columns:
+            logging.error(f"В файле {file_name} не найдены обязательные колонки {missing_columns}")
             return None
 
         filtered_df = self.filter_orders(df)
